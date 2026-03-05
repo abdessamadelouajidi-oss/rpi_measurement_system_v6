@@ -118,7 +118,7 @@ class MeasurementSystem:
 
     def on_shutdown(self):
         if self.state_machine.is_measuring():
-        self.state_machine.stop_measurement()
+           self.state_machine.stop_measurement()
 
         self.measuring_led.turn_off()
         self.idle_led.turn_on()
