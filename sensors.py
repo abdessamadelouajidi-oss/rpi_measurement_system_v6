@@ -111,7 +111,7 @@ class Accelerometer(Sensor):
             dict with 'x', 'y', 'z' keys containing acceleration values in m/s²
         """
         if self.i2c is None:
-            return {'x': 0.5, 'y': -0.3, 'z': 9.8}
+            return {'x': 999, 'y': 999, 'z': 999}
 
         try:
             # Read 6 bytes: X_MSB, X_LSB, Y_MSB, Y_LSB, Z_MSB, Z_LSB
@@ -133,10 +133,10 @@ class Accelerometer(Sensor):
         except OSError as e:
             # Errno 121 usually = wrong address/wiring/device not responding
             print(f"[ACCELEROMETER] Read OSError (errno={getattr(e,'errno',None)}): {e}")
-            return {'x': 0.0, 'y': 0.0, 'z': 0.0}
+            return {'x': 999, 'y': 999, 'z': 999}
         except Exception as e:
             print(f"[ACCELEROMETER] Read error: {e}")
-            return {'x': 0.0, 'y': 0.0, 'z': 0.0}
+            return {'x': 999, 'y': 999, 'z': 999}
 
     @staticmethod
     def _convert_14bit(msb, lsb):

@@ -110,6 +110,7 @@ class MeasurementSystem:
         else:
             self.measuring_led.turn_off()
             self.idle_led.turn_on()
+            self.readings = []
 
     def on_shutdown(self):
         """Handle POWER button hold - stop measuring and return to IDLE."""
@@ -259,7 +260,7 @@ class MeasurementSystem:
                     self._check_usb_copy()
 
                 # Small sleep to avoid busy-waiting
-                time.sleep(0.05)
+                #time.sleep(0.05)
 
         except KeyboardInterrupt:
             print("\n\nKeyboard interrupt received.")
