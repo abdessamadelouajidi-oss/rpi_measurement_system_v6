@@ -33,7 +33,33 @@ from config import (
 
 class MeasurementSystem:
     """Main vibration measurement system coordinator."""
+    def on_begin_button_pressed(self):
+        self.state_machine.toggle_measurement()
 
+        if self.state_machine.is_measuring():
+            # nur neue Werte ab Start
+            self.readings.clear()
+            self.last_reading_time = 0
+
+            if self.hall_sensor:
+                self.hall_sensor.reset_count()
+
+            self.idle_led.turn_off()
+        else:
+            self.measuring_led.turn_off()
+            self.idle_led.turn_on()
+            # optional: hier NICHT leeren, sonst verlierst du Messdaten beim Stop per BEGIN
+            # self.readings.clear()
+     def on_shutdown(self):
+        if self.state_machine.is_measuring():
+            self.state_machine.stop_measurement()
+
+        self.measuring_led.turn_off()
+        self.idle_led.turn_on()
+        self.save_readings_to_csv()
+        self.readings.clear()  # NEU
+        print("\n[POWER] Measurement stopped. Returned to IDLE.")
+        
     def __init__(self):
         """Initialize the measurement system."""
         print("=" * 60)
@@ -99,22 +125,7 @@ class MeasurementSystem:
         self.usb_seen_mounts = set()
         self.last_usb_check_time = 0
 
-  def on_begin_button_pressed(self):
-        self.state_machine.toggle_measurement()
-
-    if self.state_machine.is_measuring():
-        # NEU: nur neue Werte ab Start
-        self.readings.clear()
-        self.last_reading_time = 0
-        if self.hall_sensor:
-            self.hall_sensor.reset_count()
-
-        self.idle_led.turn_off()
-    else:
-        self.measuring_led.turn_off()
-        self.idle_led.turn_on()
-        # optional: hier NICHT leeren, sonst verlierst du Messdaten beim Stop per BEGIN
-        # self.readings.clear()
+ 
 
     def on_shutdown(self):
        if self.state_machine.is_measuring():
@@ -124,7 +135,7 @@ class MeasurementSystem:
        self.save_readings_to_csv()
        self.readings.clear()  # NEU
        print("\n[POWER] Measurement stopped. Returned to IDLE.")
-       
+
     def read_vibration(self):
         """Read accelerometer and print vibration data."""
         try:
