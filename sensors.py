@@ -257,10 +257,17 @@ class ToFSensor(Sensor):
     Supports VL53L0X via adafruit-circuitpython-vl53l0x.
     """
 
-    def __init__(self, i2c_address=0x29):
-        """Initialize the ToF sensor."""
+    def __init__(self, i2c_address=0x29, measurement_timing_budget_us=200000):
+        """Initialize the ToF sensor and start a background reader thread."""
         self._device = None
         self.i2c_address = i2c_address
+        self.measurement_timing_budget_us = int(measurement_timing_budget_us)
+
+        self._distance_mm = 0.0
+        self._lock = threading.Lock()
+        self._stop = threading.Event()
+        self._thread = None
+        self._read_error_logged = False
 
         try:
             import board
@@ -274,15 +281,42 @@ class ToFSensor(Sensor):
                     self._device.set_address(self.i2c_address)
                 else:
                     print("[TOF] Warning: driver does not support set_address")
+
+            if hasattr(self._device, "measurement_timing_budget"):
+                self._device.measurement_timing_budget = self.measurement_timing_budget_us
+                print(
+                    "[TOF] measurement_timing_budget set to "
+                    f"{self.measurement_timing_budget_us} us"
+                )
+            else:
+                print("[TOF] Warning: driver has no measurement_timing_budget property")
+
+            self._thread = threading.Thread(target=self._run, daemon=True)
+            self._thread.start()
+
             print(f"[TOF] Initialized VL53L0X on I2C (0x{self.i2c_address:02X})")
         except Exception as e:
             print(f"[TOF] Warning: Could not initialize - {e}")
             print("[TOF] Using simulated mode")
             self._device = None
 
+    def _run(self):
+        """Continuously refresh distance so main loop reads are non-blocking."""
+        while not self._stop.is_set():
+            try:
+                distance = float(self._device.range)
+                with self._lock:
+                    self._distance_mm = distance
+                self._read_error_logged = False
+            except Exception as e:
+                if not self._read_error_logged:
+                    print(f"[TOF] Read error: {e}")
+                    self._read_error_logged = True
+            time.sleep(0.001)
+
     def read(self):
         """
-        Read distance in millimeters.
+        Return latest cached distance in millimeters (non-blocking).
 
         Returns:
             dict with 'distance_mm' key
@@ -290,9 +324,12 @@ class ToFSensor(Sensor):
         if self._device is None:
             return {"distance_mm": 0.0}
 
-        try:
-            distance = self._device.range
-            return {"distance_mm": float(distance)}
-        except Exception as e:
-            print(f"[TOF] Read error: {e}")
-            return {"distance_mm": 0.0}
+        with self._lock:
+            distance = self._distance_mm
+        return {"distance_mm": float(distance)}
+
+    def cleanup(self):
+        """Stop ToF background reader thread."""
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=1.0)

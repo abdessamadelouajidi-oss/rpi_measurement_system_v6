@@ -15,6 +15,7 @@ from config import (
     ACCELEROMETER_I2C_ADDRESS,
     TOF_ENABLED,
     TOF_I2C_ADDRESS,
+    TOF_MEASUREMENT_TIMING_BUDGET_US,
     HALL_ENABLED,
     HALL_SENSOR_PIN,
     HALL_PULL_UP,
@@ -54,7 +55,10 @@ class MeasurementSystem:
         self.tof = None
         if TOF_ENABLED:
             print("Initializing VL53L0X ToF sensor...")
-            self.tof = ToFSensor(i2c_address=TOF_I2C_ADDRESS)
+            self.tof = ToFSensor(
+                i2c_address=TOF_I2C_ADDRESS,
+                measurement_timing_budget_us=TOF_MEASUREMENT_TIMING_BUDGET_US,
+            )
             print()
 
         self.hall_sensor = None
@@ -313,6 +317,8 @@ class MeasurementSystem:
         print("Cleaning up...")
         if self.hall_sensor:
             self.hall_sensor.cleanup()
+        if self.tof:
+            self.tof.cleanup()
         try:
             import RPi.GPIO as GPIO
 

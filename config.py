@@ -8,6 +8,7 @@ POWER_BUTTON_PIN = 27      # GPIO 27 for POWER button
 ACCELEROMETER_I2C_ADDRESS = 0x1C  # Default MMA8452 I2C address
 TOF_ENABLED = True  # VL53L0X time-of-flight sensor
 TOF_I2C_ADDRESS = 0x29  # Default VL53L0X address
+TOF_MEASUREMENT_TIMING_BUDGET_US = 200000  # 200 ms
 
 # Hall sensor (spin counter)
 HALL_ENABLED = True  # Set False to disable spin counting
@@ -24,7 +25,7 @@ USB_COPY_LED_PIN = 13   # GPIO 13 - indicates USB copy status
 USB_COPY_LED_BLINK_INTERVAL = 0.2  # Blink while copying
 
 # Measurement settings
-READING_INTERVAL = 1.0  # Read vibration every 1.0 second while measuring
+READING_INTERVAL = 0.01  # Seconds between main loop samples (0.01 = 100 Hz)
 
 # CSV output
 CSV_OUTPUT_PATH = "measurements.csv"  # Saved after shutdown
