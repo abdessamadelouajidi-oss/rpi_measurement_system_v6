@@ -1,4 +1,4 @@
-# Raspberry Pi Vibration Measurement System v5
+﻿# Raspberry Pi Vibration Measurement System v6
 
 A console-only vibration measurement system for Raspberry Pi using the same interaction model as v3 (BEGIN/POWER buttons + state machine + LEDs), with optional ToF and Hall sensors.
 
@@ -10,13 +10,14 @@ A console-only vibration measurement system for Raspberry Pi using the same inte
 - Accelerometer (I2C/MMA8452) vibration readings
 - Optional VL53L0X ToF distance readings
 - Optional Hall sensor spin counter (one-count-per-interaction, logged per sample)
-- CSV export to `measurements.csv`
+- CSV export to `measurements.csv` (written continuously during measurement)
+- No per-sample measurement printing to console
 - Optional USB auto-copy when a drive is inserted
 
 ## Project Structure
 
 ```
-rpi_measurement_system_v5/
+rpi_measurement_system_v6/
 |- main.py              # Main application entry point
 |- sensors.py           # Accelerometer, ToF, Hall sensor classes
 |- config.py            # Configuration settings (pins, intervals)
@@ -102,3 +103,6 @@ Hold POWER button for 2+ seconds to stop and save.
 - `RPi.GPIO` - Raspberry Pi GPIO control
 - `smbus-cffi` - I2C communication for sensors
 - `adafruit-blinka` and `adafruit-circuitpython-vl53l0x` for ToF sensor support
+
+
+

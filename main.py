@@ -1,4 +1,4 @@
-"""Main application loop for the Raspberry Pi vibration measurement system."""
+﻿"""Main application loop for the Raspberry Pi vibration measurement system."""
 
 import time
 import csv
@@ -33,6 +33,8 @@ from config import (
 
 class MeasurementSystem:
     """Main vibration measurement system coordinator."""
+
+    CSV_FIELDNAMES = ["timestamp", "x", "y", "z", "distance_mm", "spin_count"]
 
     def __init__(self):
         """Initialize the measurement system."""
@@ -99,6 +101,30 @@ class MeasurementSystem:
         self.usb_seen_mounts = set()
         self.last_usb_check_time = 0
 
+    def _initialize_csv_file(self):
+        """Create/overwrite CSV and write header at measurement start."""
+        try:
+            with open(self.csv_output_path, "w", newline="") as csv_file:
+                writer = csv.DictWriter(
+                    csv_file,
+                    fieldnames=self.CSV_FIELDNAMES,
+                )
+                writer.writeheader()
+        except Exception as e:
+            print(f"[CSV] Failed to initialize CSV file: {e}")
+
+    def _append_reading_to_csv(self, reading):
+        """Append a single reading to CSV during active measurement."""
+        try:
+            with open(self.csv_output_path, "a", newline="") as csv_file:
+                writer = csv.DictWriter(
+                    csv_file,
+                    fieldnames=self.CSV_FIELDNAMES,
+                )
+                writer.writerow(reading)
+        except Exception as e:
+            print(f"[CSV] Failed to append reading: {e}")
+
     def on_begin_button_pressed(self):
         self.state_machine.toggle_measurement()
 
@@ -106,6 +132,7 @@ class MeasurementSystem:
             # NEU: nur neue Werte ab Start
             self.readings.clear()
             self.last_reading_time = 0
+            self._initialize_csv_file()
             if self.hall_sensor:
                 self.hall_sensor.reset_count()
 
@@ -131,38 +158,23 @@ class MeasurementSystem:
         print("\n[POWER] Measurement stopped. Returned to IDLE.")
 
     def read_vibration(self):
-        """Read accelerometer and print vibration data."""
+        """Read sensors and store vibration data."""
         try:
             accel_data = self.accelerometer.read()
             tof_data = self.tof.read() if self.tof else {"distance_mm": None}
             spin_count = self.hall_sensor.get_count() if self.hall_sensor else 0
 
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
-            self.readings.append(
-                {
-                    "timestamp": timestamp,
-                    "x": accel_data["x"],
-                    "y": accel_data["y"],
-                    "z": accel_data["z"],
-                    "distance_mm": tof_data["distance_mm"],
-                    "spin_count": spin_count,
-                }
-            )
-            distance_text = (
-                f"{tof_data['distance_mm']:.1f}mm"
-                if tof_data["distance_mm"] is not None
-                else "N/A"
-            )
-            print(
-                f"[{timestamp}] Vibration - "
-                f"X={accel_data['x']:+.2f}m/s^2 "
-                f"Y={accel_data['y']:+.2f}m/s^2 "
-                f"Z={accel_data['z']:+.2f}m/s^2"
-            )
-            if self.tof:
-                print(f"[{timestamp}] Distance - D={distance_text}")
-            if self.hall_sensor:
-                print(f"[{timestamp}] Spins={spin_count}")
+            reading = {
+                "timestamp": timestamp,
+                "x": accel_data["x"],
+                "y": accel_data["y"],
+                "z": accel_data["z"],
+                "distance_mm": tof_data["distance_mm"],
+                "spin_count": spin_count,
+            }
+            self.readings.append(reading)
+            self._append_reading_to_csv(reading)
         except Exception as e:
             print(f"[ERROR] Failed to read accelerometer: {e}")
 
@@ -288,7 +300,7 @@ class MeasurementSystem:
             with open(self.csv_output_path, "w", newline="") as csv_file:
                 writer = csv.DictWriter(
                     csv_file,
-                    fieldnames=["timestamp", "x", "y", "z", "distance_mm", "spin_count"],
+                    fieldnames=self.CSV_FIELDNAMES,
                 )
                 writer.writeheader()
                 writer.writerows(self.readings)
