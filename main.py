@@ -4,7 +4,6 @@ import time
 import csv
 import os
 import shutil
-from datetime import datetime
 from state_machine import StateMachine
 from sensors import Accelerometer, ToFSensor, HallSensor
 from buttons import BeginButton, PowerButton
@@ -169,7 +168,7 @@ class MeasurementSystem:
             tof_data = self.tof.read() if self.tof else {"distance_mm": None}
             spin_count = self.hall_sensor.get_count() if self.hall_sensor else 0
 
-            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
             reading = {
                 "timestamp": timestamp,
                 "x": accel_data["x"],
